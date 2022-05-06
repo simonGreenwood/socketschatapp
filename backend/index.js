@@ -1,16 +1,28 @@
 const express = require('express');
 const app = express();
+const bodyParser = require('body-parser')
+const morgan = require('morgan');
+app.use(bodyParser.json());
+morgan.token('body', (req, res) => JSON.stringify(req.body));
+app.use(morgan(':method :url :status :response-time ms - :res[content-length] :body '));
+
+
+app.use(express.json())
+
+const cors = require('cors')
+app.use(cors())
+
+
 const socketio = require('socket.io')
 const http = require('http');
-const { randomBytes } = require('crypto');
-const httpServer = http.createServer(app);
+const httpServer = http.createServer(app);               
 const io = new socketio.Server(httpServer,{
   cors: {
     origin: "*",
     methods: ["GET","POST"]
   }
 });
-
+const codeLength = 6
 const rooms = []
 /*
 {
@@ -22,15 +34,34 @@ const rooms = []
 const generateCode = () => {
   const allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"//abcdefghijklmnopqrstuvwxyz0123456789"
   let text = ''
-  for (let i = 0; i<6; i++) {
+  for (let i = 0; i<codeLength; i++) {
     text=text.concat(allowed[Math.floor(Math.random()*allowed.length)])
   }
   return text
 }
-io.on('connection', (socket) => {
-  console.log('a user connected');
+
+app.post('/api/create',(req,res) => {
+  const code = generateCode()
+  const roomObject = {
+    "name":req.body.name,
+    "code":code,
+    "online":[]
+  }
+  rooms.pus
   
-  socket.on('user connect',username => {
+})
+app.get('/api/rooms',(req,res) => {
+
+})
+app.post('/api/join',(req,res) => {
+
+})
+
+io.on('connection', (socket) => {
+
+  console.log('a user connected'); 
+
+  socket.on('user connect',(username,roomCode) => {
     io.emit('user connect',username)
     console.log(username)
   })
@@ -38,43 +69,9 @@ io.on('connection', (socket) => {
   socket.on('message',(author,message) => {
     io.emit('message',author,message)
   })
-  
-  
 
-  //make sure names meet criteria
-  socket.on('verify username',(username) => {
-    if ( username.length.trim() < 15 && username.length.trim() > 5) {
-      console.log('valid username')
-    }
-  })
-
-  socket.on('verify room name',(roomName) => {
-    if (10 > roomName.length && roomName.length > 5) {
-      console.log('room name is valid')
-    }
-  });
-
-
-
-  // room logic
-  socket.on('join room',code => {
-    console.log(`joining room ${code}`)
-    const room = rooms.find(room => room.code === code)
-    if (room){
-      console.log('we have found the room')
-    }
-  })
-  socket.on('get rooms',() => {
-    console.log(rooms)
-  })
-  socket.on('create room',(name) => {
-    rooms.push({
-      name:name,
-      code:generateCode(),
-
-    })
-  })
 });
+
 
 
 
